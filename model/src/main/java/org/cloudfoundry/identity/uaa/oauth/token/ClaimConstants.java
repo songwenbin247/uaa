@@ -52,5 +52,10 @@ public class ClaimConstants {
     public static final String EXTERNAL_ATTR = "ext_attr";
     public static final String AMR = "amr";
     public static final String ACR = "acr";
+<<<<<<< 011e1b86340db0b9e098e7d1eeaf4b0af8797360
     public static final String PREVIOUS_LOGON_TIME = "previous_logon_time";
+||||||| merged common ancestors
+=======
+    public static final String TENANT_ID = "tenant_id";
+>>>>>>> [Sanjeev,Roop,Brittany,Vineet] Added Jwt bearer grant type.
 }
