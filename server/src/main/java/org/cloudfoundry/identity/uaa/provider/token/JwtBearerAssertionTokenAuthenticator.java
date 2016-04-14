@@ -31,12 +31,13 @@ public class JwtBearerAssertionTokenAuthenticator {
     private ClientDetailsService clientDetailsService;
     private DevicePublicKeyProvider clientPublicKeyProvider;
     private final int maxAcceptableClockSkewSeconds = 60;
-    private final ClientAssertionHeaderAuthenticator headerAuthenticator = new ClientAssertionHeaderAuthenticator();
+    private final ClientAssertionHeaderAuthenticator headerAuthenticator;
 
     private final String issuerURL;
 
-    public JwtBearerAssertionTokenAuthenticator(final String issuerURL) {
+    public JwtBearerAssertionTokenAuthenticator(final String issuerURL, final int clientHeaderTTL) {
         this.issuerURL = issuerURL;
+        this.headerAuthenticator = new ClientAssertionHeaderAuthenticator(clientHeaderTTL);
     }
 
     public void setClientPublicKeyProvider(final DevicePublicKeyProvider clientPublicKeyProvider) {
@@ -61,15 +62,15 @@ public class JwtBearerAssertionTokenAuthenticator {
     public Authentication authenticate(final String jwtAssertionToken, final String proxyAssertionHeader,
             final String proxyPublicKey) throws AuthenticationException {
         Jwt jwtAssertion = decodeJwt(jwtAssertionToken);
-        String headerClaims = this.headerAuthenticator.authenticate(proxyAssertionHeader, proxyPublicKey);
+        Map<String, Object> headerClaims = this.headerAuthenticator.authenticate(proxyAssertionHeader, proxyPublicKey);
         assertJwtAssertionSubjectMatch(headerClaims, jwtAssertion);
         return authenticateJwtAssertionToken(jwtAssertion, getPublicKey(headerClaims));
     }
 
     //Fails unless sub claim in both parameters is the same
-    private void assertJwtAssertionSubjectMatch(String headerClaims, Jwt jwtAssertion) {
+    private void assertJwtAssertionSubjectMatch(Map<String, Object> headerClaims, Jwt jwtAssertion) {
         try {
-            String headerSubject = (String) claimsMap(headerClaims).get(ClaimConstants.SUB);
+            String headerSubject = (String) headerClaims.get(ClaimConstants.SUB);
             String jwtAssertionSubject = (String) claimsMap(jwtAssertion.getClaims()).get(ClaimConstants.SUB);
             if (headerSubject.equals(jwtAssertionSubject)) {
                 return;
@@ -88,7 +89,7 @@ public class JwtBearerAssertionTokenAuthenticator {
      */
     public Authentication authenticate(final String jwtAssertionToken) throws AuthenticationException {
         Jwt jwt = decodeJwt(jwtAssertionToken);
-        return authenticateJwtAssertionToken(jwt, getPublicKey(jwt.getClaims()));
+        return authenticateJwtAssertionToken(jwt, getPublicKey(claimsMap(jwt.getClaims())));
     }
 
     /**
@@ -138,10 +139,9 @@ public class JwtBearerAssertionTokenAuthenticator {
         throw new BadCredentialsException("Invalid JWT token.");
     }
 
-    private String getPublicKey(final String claimsJson) {
+    private String getPublicKey(final Map<String, Object> claims) {
         String base64UrlEncodedPublicKey = null;
         try {
-            Map<String, Object> claims = claimsMap(claimsJson);
             // Predix CAAS url base64URL decodes the public key.
             String tenantId = (String) claims.get(ClaimConstants.TENANT_ID);
             String deviceId = (String) claims.get(ClaimConstants.SUB);
@@ -191,6 +191,8 @@ public class JwtBearerAssertionTokenAuthenticator {
 
     private Long getExpClaim(final Map<String, Object> claims) {
         try {
+            //This is against the JWT spec. Value must be a json NumericDate. 
+            
             // Always converting to String to convert to long, to avoid class cast exceptions.
             return Long.valueOf(String.valueOf(claims.get(ClaimConstants.EXP)));
         } catch (RuntimeException e) {

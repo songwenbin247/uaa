@@ -42,10 +42,12 @@ public class JwtBearerAssertionTokenAuthenticatorTest {
 
     @InjectMocks
     private final JwtBearerAssertionTokenAuthenticator tokenAuthenticator = new JwtBearerAssertionTokenAuthenticator(
-            AUDIENCE);
+            AUDIENCE, 15);
 
     @Mock
     private ClientDetailsService clientDetailsService;
+    
+    private long currentTimeSecs;
 
     @Before
     public void beforeMethod() {
@@ -53,13 +55,15 @@ public class JwtBearerAssertionTokenAuthenticatorTest {
         this.tokenAuthenticator.setClientPublicKeyProvider(new MockKeyProvider());
         when(this.clientDetailsService.loadClientByClientId(DEVICE_1_ID))
                 .thenReturn(new BaseClientDetails(DEVICE_1_ID, null, null, null, null, null));
+        this.currentTimeSecs =  System.currentTimeMillis()/1000;
     }
 
     @Test
     public void testSuccess() {
-        String token = new MockAssertionToken().mockAssertionToken(DEVICE_1_ID, System.currentTimeMillis() - 240000L,
+        long currentTime = System.currentTimeMillis();
+        String token = new MockAssertionToken().mockAssertionToken(DEVICE_1_ID, currentTime- 240000L,
                 600, TENANT_ID, AUDIENCE);
-        String header = new MockClientAssertionHeader().mockSignedHeader(DEVICE_1_ID, TENANT_ID);
+        String header = new MockClientAssertionHeader().mockSignedHeader(this.currentTimeSecs, DEVICE_1_ID, TENANT_ID);
         this.tokenAuthenticator.setClientDetailsService(this.clientDetailsService);
         Authentication authn = this.tokenAuthenticator.authenticate(token, header, MockKeyProvider.DEVICE1_PUBLIC_KEY);
         Assert.assertEquals(DEVICE_1_ID, authn.getPrincipal());
@@ -234,7 +238,7 @@ public class JwtBearerAssertionTokenAuthenticatorTest {
             }
 
         }
-        String header = new MockClientAssertionHeader().mockSignedHeader(DEVICE_1_ID, TENANT_ID);
+        String header = new MockClientAssertionHeader().mockSignedHeader(this.currentTimeSecs, DEVICE_1_ID, TENANT_ID);
         this.tokenAuthenticator.setClientPublicKeyProvider(new NotFoundKeyProvider());
         Assert.assertNotNull(this.tokenAuthenticator.authenticate("sometoken", header, MockKeyProvider.DEVICE1_PUBLIC_KEY));
     }
@@ -248,14 +252,14 @@ public class JwtBearerAssertionTokenAuthenticatorTest {
             }
 
         }
-        String header = new MockClientAssertionHeader().mockSignedHeader(DEVICE_1_ID, TENANT_ID);
+        String header = new MockClientAssertionHeader().mockSignedHeader(this.currentTimeSecs, DEVICE_1_ID, TENANT_ID);
         this.tokenAuthenticator.setClientPublicKeyProvider(new NullKeyProvider());
         Assert.assertNotNull(this.tokenAuthenticator.authenticate("sometoken", header, MockKeyProvider.DEVICE1_PUBLIC_KEY));
     }
 
     @Test(expected = AuthenticationException.class)
     public void testPublicKeyProviderIsNull() {
-        String header = new MockClientAssertionHeader().mockSignedHeader(DEVICE_1_ID, TENANT_ID);
+        String header = new MockClientAssertionHeader().mockSignedHeader(this.currentTimeSecs, DEVICE_1_ID, TENANT_ID);
         this.tokenAuthenticator.setClientPublicKeyProvider(null);
         Assert.assertNotNull(this.tokenAuthenticator.authenticate("sometoken", header, MockKeyProvider.DEVICE1_PUBLIC_KEY));
     }
@@ -276,7 +280,7 @@ public class JwtBearerAssertionTokenAuthenticatorTest {
         KeyPair proxyKeyPair = getNewRsaKeyPair();
         // assertion header (d2, tenant_id) signed by proxy
         String device2SignedHeader = new MockClientAssertionHeader((RSAPrivateKey) proxyKeyPair.getPrivate())
-                .mockSignedHeader(DEVICE_1_ID, TENANT_ID);
+                .mockSignedHeader(this.currentTimeSecs, DEVICE_1_ID, TENANT_ID);
         String proxyPublicKey = new String(TestKeyProvider.getPEMPublicKey(proxyKeyPair.getPublic()), UTF8);
 
         // setup test key provider

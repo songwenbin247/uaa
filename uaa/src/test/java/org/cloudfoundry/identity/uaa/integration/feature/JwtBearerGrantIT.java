@@ -60,7 +60,8 @@ public class JwtBearerGrantIT {
 
     private HttpHeaders getHttpHeaders() {
         HttpHeaders headers = new HttpHeaders();
-        String assertionHeader = new MockClientAssertionHeader().mockSignedHeader(DEVICE_ID, TENANT_ID);
+        String assertionHeader = new MockClientAssertionHeader().mockSignedHeader(System.currentTimeMillis()/1000, 
+                                                                                  DEVICE_ID, TENANT_ID);
         headers.add(PREDIX_CLIENT_ASSERTION_HEADER, assertionHeader);
         return headers;
     }

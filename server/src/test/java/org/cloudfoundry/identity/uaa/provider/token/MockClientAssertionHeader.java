@@ -20,27 +20,31 @@ public class MockClientAssertionHeader {
         this.signer = new RsaSigner(signingKey);
     }
 
-    public String mockSignedHeader(final String devicedId, final String tenantId) {
-        return JwtHelper.encode(mockHeaderContent(devicedId, tenantId), this.signer).getEncoded();
+    public String mockSignedHeader(Long iat, String devicedId, String tenantId) {
+        return JwtHelper.encode(mockHeaderContent(iat, devicedId, tenantId), this.signer).getEncoded();
     }
 
     public String mockIncorrectlySignedHeader(final String devicedId, final String tenantId) {
-        return JwtHelper.encode(mockHeaderContent(devicedId, tenantId), 
+        long currentTimeSecs = System.currentTimeMillis() / 1000;
+        return JwtHelper.encode(mockHeaderContent(currentTimeSecs, devicedId, tenantId), 
                 new RsaSigner(MockKeyProvider.INCORRECT_TOKEN_SIGNING_KEY)).getEncoded();
     }
 
-    private String mockHeaderContent(final String devicedId, final String tenantId) {
+    private String mockHeaderContent(Long iat, final String devicedId, final String tenantId) {
         String content;
         try {
-            content = JsonUtils.writeValueAsString(createClaims(devicedId, tenantId));
+            content = JsonUtils.writeValueAsString(createClaims(iat, devicedId, tenantId));
         } catch (JsonUtils.JsonUtilException e) {
             throw new IllegalStateException("Cannot convert access token to JSON", e);
         }
         return content;
     }
 
-    private Map<String, ?> createClaims(final String devicedId, final String tenantId) {
+    private Map<String, ?> createClaims(Long iat, final String devicedId, final String tenantId) {
         Map<String, Object> response = new LinkedHashMap<String, Object>();
+        if (iat != null) {
+            response.put(ClaimConstants.IAT, iat);
+        }
         response.put(ClaimConstants.SUB, devicedId);
         response.put(ClaimConstants.TENANT_ID, tenantId);
         return response;
