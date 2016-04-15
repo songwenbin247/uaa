@@ -31,17 +31,16 @@ public class MockAssertionToken {
     public String mockAssertionToken(final String subject, final long issuedAtMillis, final long validitySeconds,
             final String tenantId, final String audience) {
         Object expiration = (issuedAtMillis + (validitySeconds * 1000L)) / 1000L;
-        return createAssertionToken(subject, validitySeconds, audience, issuedAtMillis, tenantId, expiration);
+        return createAssertionToken(subject, audience, issuedAtMillis, tenantId, expiration);
     }
 
     public String mockInvalidExpirationAssertionToken(final String subject,
-            final long issuedAtMillis, final long validitySeconds, final String tenantId, final String audience,
-            final Object expiration) {
-        return createAssertionToken(subject, validitySeconds, audience, issuedAtMillis, tenantId, expiration);
+            final long issuedAtMillis, final String tenantId, final String audience, final Object expiration) {
+        return createAssertionToken(subject, audience, issuedAtMillis, tenantId, expiration);
     }
 
-    private String createAssertionToken(final String subject, final long validitySeconds,
-            final String resourceId, final long issuedAtMillis, final String tenantId, final Object expiration) {
+    private String createAssertionToken(final String subject, final String resourceId,
+            final long issuedAtMillis, final String tenantId, final Object expiration) {
 
         String content;
         try {

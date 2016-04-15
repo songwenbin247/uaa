@@ -173,8 +173,8 @@ public class JwtBearerAssertionTokenAuthenticatorTest {
     public void testTokenWithNoExpClaim() {
         MockAssertionToken testTokenUtil = new MockAssertionToken();
         //create token with no exp claim
-        String token = testTokenUtil.mockInvalidExpirationAssertionToken(DEVICE_1_ID, 0, 0,
-                TENANT_ID, AUDIENCE, null);
+        String token = testTokenUtil.mockInvalidExpirationAssertionToken(DEVICE_1_ID, 0, TENANT_ID,
+                AUDIENCE, null);
         this.tokenAuthenticator.setClientDetailsService(this.clientDetailsService);
         this.tokenAuthenticator.authenticate(token);
     }
@@ -192,7 +192,7 @@ public class JwtBearerAssertionTokenAuthenticatorTest {
     public void testInvalidExpirationFormatString() {
         MockAssertionToken testTokenUtil = new MockAssertionToken();
         String token = testTokenUtil.mockInvalidExpirationAssertionToken(DEVICE_1_ID,
-                System.currentTimeMillis() - 240000, 600, TENANT_ID, AUDIENCE, "invalid-expiration-as-string");
+                System.currentTimeMillis() - 240000, TENANT_ID, AUDIENCE, "invalid-expiration-as-string");
         this.tokenAuthenticator.setClientDetailsService(this.clientDetailsService);
         this.tokenAuthenticator.authenticate(token);
     }
@@ -201,7 +201,7 @@ public class JwtBearerAssertionTokenAuthenticatorTest {
     public void testInvalidExpirationFormatNegativeNumber() {
         MockAssertionToken testTokenUtil = new MockAssertionToken();
         String token = testTokenUtil.mockInvalidExpirationAssertionToken(DEVICE_1_ID,
-                System.currentTimeMillis() - 240000, 600, TENANT_ID, AUDIENCE, -1);
+                System.currentTimeMillis() - 240000, TENANT_ID, AUDIENCE, -1);
         this.tokenAuthenticator.setClientDetailsService(this.clientDetailsService);
         this.tokenAuthenticator.authenticate(token);
     }
@@ -210,16 +210,18 @@ public class JwtBearerAssertionTokenAuthenticatorTest {
     public void testInvalidExpirationFormatInRangeNegativeLong() {
         MockAssertionToken testTokenUtil = new MockAssertionToken();
         String token = testTokenUtil.mockInvalidExpirationAssertionToken(DEVICE_1_ID,
-                System.currentTimeMillis() - 240000, 600, TENANT_ID, AUDIENCE, -9223372036854775808L);
+                System.currentTimeMillis() - 240000, TENANT_ID, AUDIENCE, -9223372036854775808L);
         this.tokenAuthenticator.setClientDetailsService(this.clientDetailsService);
         this.tokenAuthenticator.authenticate(token);
     }
 
+    //RFC7519 requires exp value to be 'NumericDate' - A JSON numeric value representing the number of seconds since..
     @Test(expected = AuthenticationException.class)
-    public void testInvalidExpirationFormatOutofRangeLong() {
+    public void testInvalidExpirationJsonString() {
+        long currentTime = System.currentTimeMillis();
         MockAssertionToken testTokenUtil = new MockAssertionToken();
         String token = testTokenUtil.mockInvalidExpirationAssertionToken(DEVICE_1_ID,
-                System.currentTimeMillis() - 240000, 600, TENANT_ID, AUDIENCE, "9223372036854775808");
+                 currentTime, TENANT_ID, AUDIENCE, String.valueOf(currentTime + 60));
         this.tokenAuthenticator.setClientDetailsService(this.clientDetailsService);
         this.tokenAuthenticator.authenticate(token);
     }

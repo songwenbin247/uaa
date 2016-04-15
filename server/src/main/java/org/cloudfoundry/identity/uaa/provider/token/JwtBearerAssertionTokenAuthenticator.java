@@ -189,12 +189,9 @@ public class JwtBearerAssertionTokenAuthenticator {
         }
     }
 
-    private Long getExpClaim(final Map<String, Object> claims) {
+    private Integer getExpClaim(final Map<String, Object> claims) {
         try {
-            //This is against the JWT spec. Value must be a json NumericDate. 
-            
-            // Always converting to String to convert to long, to avoid class cast exceptions.
-            return Long.valueOf(String.valueOf(claims.get(ClaimConstants.EXP)));
+            return (Integer) claims.get(ClaimConstants.EXP);
         } catch (RuntimeException e) {
             throw new InvalidTokenException("Expiration is in the wrong format.");
         }
