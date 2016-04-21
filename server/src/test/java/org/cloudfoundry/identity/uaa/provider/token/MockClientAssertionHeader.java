@@ -42,9 +42,7 @@ public class MockClientAssertionHeader {
 
     private Map<String, ?> createClaims(Long iat, final String devicedId, final String tenantId) {
         Map<String, Object> response = new LinkedHashMap<String, Object>();
-        if (iat != null) {
-            response.put(ClaimConstants.IAT, iat);
-        }
+        response.put(ClaimConstants.IAT, iat);
         response.put(ClaimConstants.SUB, devicedId);
         response.put(ClaimConstants.TENANT_ID, tenantId);
         return response;

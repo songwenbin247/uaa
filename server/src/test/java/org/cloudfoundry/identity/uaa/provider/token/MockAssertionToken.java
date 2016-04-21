@@ -28,38 +28,37 @@ public class MockAssertionToken {
         this.signer = new RsaSigner(tokenSigningKey);
     }
 
-    public String mockAssertionToken(final String subject, final long issuedAtMillis, final long validitySeconds,
-            final String tenantId, final String audience) {
+    public String mockAssertionToken(String issuer, final String subject, final long issuedAtMillis,
+            final long validitySeconds, final String tenantId, final String audience) {
         Object expiration = (issuedAtMillis + (validitySeconds * 1000L)) / 1000L;
-        return createAssertionToken(subject, audience, issuedAtMillis, tenantId, expiration);
+        return createAssertionToken(issuer, subject, audience, issuedAtMillis, tenantId, expiration);
     }
 
-    public String mockInvalidExpirationAssertionToken(final String subject,
+    public String mockInvalidExpirationAssertionToken(String issuer, final String subject,
             final long issuedAtMillis, final String tenantId, final String audience, final Object expiration) {
-        return createAssertionToken(subject, audience, issuedAtMillis, tenantId, expiration);
+        return createAssertionToken(issuer, subject, audience, issuedAtMillis, tenantId, expiration);
     }
 
-    private String createAssertionToken(final String subject, final String resourceId,
-            final long issuedAtMillis, final String tenantId, final Object expiration) {
+    private String createAssertionToken(String issuer, String subject, String audience,
+             final long issuedAtMillis, final String tenantId, final Object expiration) {
 
         String content;
         try {
             content = JsonUtils.writeValueAsString(
-                    createClaims(subject, resourceId, issuedAtMillis, expiration, tenantId));
+                    createClaims(issuer, subject, audience, issuedAtMillis, expiration, tenantId));
         } catch (JsonUtils.JsonUtilException e) {
             throw new IllegalStateException("Cannot convert access token to JSON", e);
         }
         return JwtHelper.encode(content, this.signer).getEncoded();
     }
 
-    static Map<String, ?> createClaims(final String subject, final String audience,
-            final long issuedAtMillis, final Object expiration, final String tenantId) {
+    static Map<String, ?> createClaims(String issuer, String subject, final String audience,
+             final long issuedAtMillis, final Object expiration, final String tenantId) {
         Map<String, Object> response = new LinkedHashMap<String, Object>();
+        response.put(ClaimConstants.ISS, issuer);
         response.put(ClaimConstants.SUB, subject);
         response.put(ClaimConstants.TENANT_ID, tenantId);
-
-        //iat is not currently used by predix machine
-        //response.put(ClaimConstants.IAT, issuedAtMillis / 1000L);
+        response.put(ClaimConstants.IAT, issuedAtMillis / 1000L);
 
         if (expiration != null) {
             response.put(ClaimConstants.EXP, expiration);

@@ -100,7 +100,7 @@ public class JwtBearerAssertionAuthenticationFilter extends OncePerRequestFilter
             return tokenAuthenticator.authenticate(jwtAssertion,
                     request.getHeader(PREDIX_CLIENT_ASSERTION_HEADER), this.proxyPublicKey);
         } else {
-            return tokenAuthenticator.authenticate(jwtAssertion);
+            return tokenAuthenticator.authenticateWithoutClientAssertionHeader(jwtAssertion);
         }
     }
 }

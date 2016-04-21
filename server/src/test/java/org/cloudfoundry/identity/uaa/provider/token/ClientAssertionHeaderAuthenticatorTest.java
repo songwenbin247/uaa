@@ -80,5 +80,18 @@ public class ClientAssertionHeaderAuthenticatorTest {
         ClientAssertionHeaderAuthenticator headerAuthenticator = new ClientAssertionHeaderAuthenticator();
         headerAuthenticator.authenticate(header, MockKeyProvider.DEVICE1_PUBLIC_KEY);
     }
-    
+
+    @Test(expected=AuthenticationException.class)
+    public void testTenantIdClaimAbsent() {
+        String header = new MockClientAssertionHeader().mockSignedHeader(currentTimeSeconds, DEVICE_ID, null);
+        ClientAssertionHeaderAuthenticator headerAuthenticator = new ClientAssertionHeaderAuthenticator();
+        headerAuthenticator.authenticate(header, MockKeyProvider.DEVICE1_PUBLIC_KEY);
+    }
+
+    @Test(expected=AuthenticationException.class)
+    public void testSubClaimAbsent() {
+        String header = new MockClientAssertionHeader().mockSignedHeader(currentTimeSeconds, null, TENANT_ID);
+        ClientAssertionHeaderAuthenticator headerAuthenticator = new ClientAssertionHeaderAuthenticator();
+        headerAuthenticator.authenticate(header, MockKeyProvider.DEVICE1_PUBLIC_KEY);
+    }
 }

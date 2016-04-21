@@ -61,7 +61,12 @@ public class ClientAssertionHeaderAuthenticator {
         long currentTime = System.currentTimeMillis();
         
         //require iat claim and check time skew
-        Integer iat = (Integer) claims.get(ClaimConstants.IAT);
+        Integer iat = null;
+        try {
+            iat = (Integer) claims.get(ClaimConstants.IAT);
+        } catch (RuntimeException e) {
+            throw new BadCredentialsException("iat claim in Predix-Client-Assertion token is in the wrong format.");
+        }
         if (iat == null || isSkewed(iat, currentTime) ) {
             throw new BadCredentialsException("iat claim is required in Predix-Client-Assertion token.");
         } 
@@ -71,6 +76,15 @@ public class ClientAssertionHeaderAuthenticator {
             throw new BadCredentialsException("Predix-Client-Assertion token has expired.");
         }
 
+        //require tenant_id claim
+        if (!StringUtils.hasText((String) claims.get(ClaimConstants.TENANT_ID))) {
+            throw new BadCredentialsException("tenant_id claim is required in Predix-Client-Assertion token.");
+        }
+
+        //require subject claim
+        if (!StringUtils.hasText((String) claims.get(ClaimConstants.SUB))) {
+            throw new BadCredentialsException("sub claim is required in Predix-Client-Assertion token.");
+        }
     }
 
     private boolean isSkewed(Integer iat, long time) {

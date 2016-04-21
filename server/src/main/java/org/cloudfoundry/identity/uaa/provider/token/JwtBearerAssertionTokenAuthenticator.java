@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.cloudfoundry.identity.uaa.oauth.client.ClientConstants;
 import org.cloudfoundry.identity.uaa.oauth.token.ClaimConstants;
 import org.cloudfoundry.identity.uaa.util.JsonUtils;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -50,33 +51,40 @@ public class JwtBearerAssertionTokenAuthenticator {
 
     /**
      * Performs authentication of proxy assertion header prior to authenticating JWT assertion token
-     * 
+     *
      * @param proxyAssertionHeader
      *            Value of 'Predix-Client-Assertion' header. This is used to identify the deviceId,tenantId of the
      *            device authenticated over TLS by the proxy.
-     * 
+     *
      * @return An Authentication object if authentication is successful
      * @throws AuthenticationException
      *             if authentication failed
      */
     public Authentication authenticate(final String jwtAssertionToken, final String proxyAssertionHeader,
             final String proxyPublicKey) throws AuthenticationException {
-        Jwt jwtAssertion = decodeJwt(jwtAssertionToken);
         Map<String, Object> headerClaims = this.headerAuthenticator.authenticate(proxyAssertionHeader, proxyPublicKey);
+        Jwt jwtAssertion = decodeJwt(jwtAssertionToken);
         assertJwtAssertionSubjectMatch(headerClaims, jwtAssertion);
         return authenticateJwtAssertionToken(jwtAssertion, getPublicKey(headerClaims));
     }
 
-    //Fails unless sub claim in both parameters is the same
-    private void assertJwtAssertionSubjectMatch(Map<String, Object> headerClaims, Jwt jwtAssertion) {
+    // Fails unless sub claim in both parameters is the same
+    private void assertJwtAssertionSubjectMatch(final Map<String, Object> headerClaims, final Jwt jwtAssertion) {
+        Map<String, Object> jwtAssertionClaims = claimsMap(jwtAssertion.getClaims());
+
+        // require subject claim
+        if (!StringUtils.hasText((String) jwtAssertionClaims.get(ClaimConstants.SUB))) {
+            throw new BadCredentialsException("Subject claim is required in jwt-bearer assertion.");
+        }
+
         try {
             String headerSubject = (String) headerClaims.get(ClaimConstants.SUB);
-            String jwtAssertionSubject = (String) claimsMap(jwtAssertion.getClaims()).get(ClaimConstants.SUB);
+            String jwtAssertionSubject = (String) jwtAssertionClaims.get(ClaimConstants.SUB);
             if (headerSubject.equals(jwtAssertionSubject)) {
                 return;
             }
         } catch (RuntimeException e) {
-            logger.debug(e);
+            this.logger.debug(e);
             throw new BadCredentialsException("Invalid JWT token.");
         }
         throw new BadCredentialsException("Invalid jwt-bearer assertion.");
@@ -87,7 +95,8 @@ public class JwtBearerAssertionTokenAuthenticator {
      * @throws AuthenticationException
      *             must throw this if authentication failed
      */
-    public Authentication authenticate(final String jwtAssertionToken) throws AuthenticationException {
+    public Authentication authenticateWithoutClientAssertionHeader(final String jwtAssertionToken)
+            throws AuthenticationException {
         Jwt jwt = decodeJwt(jwtAssertionToken);
         return authenticateJwtAssertionToken(jwt, getPublicKey(claimsMap(jwt.getClaims())));
     }
@@ -96,21 +105,23 @@ public class JwtBearerAssertionTokenAuthenticator {
      * @throws AuthenticationException
      *             must throw this if authentication fails
      */
-    private Authentication authenticateJwtAssertionToken(final Jwt jwt, String devicePublicKey) throws AuthenticationException {
+    private Authentication authenticateJwtAssertionToken(final Jwt jwt, final String devicePublicKey)
+            throws AuthenticationException {
         try {
             Map<String, Object> claims = claimsMap(jwt.getClaims());
             jwt.verifySignature(getVerifier(devicePublicKey));
 
-            // Use 'sub' claim as the uaa client for issuing access token. This client must be provisioned in current
-            // uaa zone to authorize access for the requesting subject.
-            String deviceId = (String) claims.get(ClaimConstants.SUB);
-            assertClientIdExists(deviceId);
+            validateClaims(claims);
+
+            String issuer = (String) claims.get(ClaimConstants.ISS);
+            assertSubjectIsAuthorized(issuer, (String) claims.get(ClaimConstants.SUB));
 
             assertAudience(claims, this.issuerURL);
             assertTokenIsCurrent(claims);
 
-            // Authorities are populated during actual token grant in UaaTokenServices#createAccessToken
-            return new UsernamePasswordAuthenticationToken(deviceId, null, Collections.emptyList());
+            return new UsernamePasswordAuthenticationToken(issuer, null,
+                    // Authorities are populated during actual token grant in UaaTokenServices#createAccessToken
+                    Collections.emptyList());
 
         } catch (RuntimeException e) {
             this.logger.debug("Validation failed for jwt-bearer assertion token. token:{" + jwt + "} error: " + e);
@@ -120,6 +131,50 @@ public class JwtBearerAssertionTokenAuthenticator {
         throw new BadCredentialsException("Authentication of client failed.");
     }
 
+    private void validateClaims(final Map<String, Object> claims) {
+        // require subject claim
+        if (!StringUtils.hasText((String) claims.get(ClaimConstants.SUB))) {
+            throw new InvalidTokenException("sub claim is required in jwt-bearer assertion.");
+        }
+
+        // require tenant_id claim
+        if (!StringUtils.hasText((String) claims.get(ClaimConstants.TENANT_ID))) {
+            throw new InvalidTokenException("tenant_id claim is required in jwt-bearer assertion.");
+        }
+
+        // require issuer claim
+        if (!StringUtils.hasText((String) claims.get(ClaimConstants.ISS))) {
+            throw new InvalidTokenException("iss claim is required in jwt-bearer assertion.");
+        }
+
+        // require audience claim
+        if (!StringUtils.hasText((String) claims.get(ClaimConstants.AUD))) {
+            throw new InvalidTokenException("aud claim is required in jwt-bearer assertion.");
+        }
+
+        // require iat positive numeric claim
+        Integer iat = null;
+        try {
+            iat = (Integer) claims.get(ClaimConstants.IAT);
+        } catch (RuntimeException e) {
+            throw new InvalidTokenException("iat claim is in the wrong format.");
+        }
+        if (iat == null) {
+            throw new InvalidTokenException("iat claim is required in jwt-bearer assertion.");
+        }
+
+        // require positive numeric expiration claim
+        Integer exp = null;
+        try {
+            exp = (Integer) claims.get(ClaimConstants.EXP);
+        } catch (RuntimeException e) {
+            throw new InvalidTokenException("exp claim is in the wrong format.");
+        }
+        if (exp == null) {
+            throw new InvalidTokenException("exp claim is required in jwt-bearer assertion.");
+        }
+    }
+
     private Map<String, Object> claimsMap(final String claimsJson) {
         Map<String, Object> claims = JsonUtils.readValue(claimsJson, new TypeReference<Map<String, Object>>() {
             // Nothing to add here.
@@ -127,7 +182,7 @@ public class JwtBearerAssertionTokenAuthenticator {
         return claims;
     }
 
-    private Jwt decodeJwt(String jwtString) {
+    private Jwt decodeJwt(final String jwtString) {
         try {
             if (StringUtils.hasText(jwtString)) {
                 return JwtHelper.decode(jwtString);
@@ -157,11 +212,26 @@ public class JwtBearerAssertionTokenAuthenticator {
         throw new BadCredentialsException("Unknown client.");
     }
 
-    private void assertClientIdExists(final String clientId) {
-        ClientDetails expectedClient = this.clientDetailsService.loadClientByClientId(clientId);
-        if (expectedClient == null) {
+    private void assertSubjectIsAuthorized(final String clientId, final String claimedSubject) {
+        ClientDetails client = this.clientDetailsService.loadClientByClientId(clientId);
+        if (client == null) {
             throw new InvalidTokenException("Unknown client: " + clientId);
         }
+
+        if (!isSubjectAuthorized(client, claimedSubject)) {
+            throw new InvalidTokenException(
+                    String.format("Unauthorized subject:(%s) for uaa client:(%s)", claimedSubject, clientId));
+        }
+    }
+
+    private boolean isSubjectAuthorized(final ClientDetails expectedClient, final String claimedSubject) {
+        String authorizedSubject = (String) expectedClient.getAdditionalInformation()
+                .get(ClientConstants.ALLOWED_DEVICE_ID);
+
+        if (StringUtils.hasText((authorizedSubject))) {
+            return authorizedSubject.equals(claimedSubject);
+        }
+        return false;
     }
 
     private void assertAudience(final Map<String, Object> claims, final String issuerURL) {
@@ -180,20 +250,12 @@ public class JwtBearerAssertionTokenAuthenticator {
     }
 
     private void assertTokenIsCurrent(final Map<String, Object> claims) {
-        long expSeconds = getExpClaim(claims);
+        long expSeconds = (Integer) claims.get(ClaimConstants.EXP);
         long expWithSkewMillis = (expSeconds + this.maxAcceptableClockSkewSeconds) * 1000;
         long currentTime = System.currentTimeMillis();
 
         if (currentTime > expWithSkewMillis) {
             throw new InvalidTokenException("Token is expired");
-        }
-    }
-
-    private Integer getExpClaim(final Map<String, Object> claims) {
-        try {
-            return (Integer) claims.get(ClaimConstants.EXP);
-        } catch (RuntimeException e) {
-            throw new InvalidTokenException("Expiration is in the wrong format.");
         }
     }
 }
