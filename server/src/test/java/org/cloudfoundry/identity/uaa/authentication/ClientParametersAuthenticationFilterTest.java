@@ -49,6 +49,7 @@ public class ClientParametersAuthenticationFilterTest {
         MockFilterChain chain = mock(MockFilterChain.class);
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("Content-Type", MediaType.APPLICATION_FORM_URLENCODED_VALUE);
+        request.addParameter(AbstractClientParametersAuthenticationFilter.CLIENT_ID, "testClientId");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         filter.doFilter(request, response, chain);
