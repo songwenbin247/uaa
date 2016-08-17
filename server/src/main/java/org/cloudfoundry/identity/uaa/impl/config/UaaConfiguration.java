@@ -180,8 +180,8 @@ public class UaaConfiguration {
         public Assertion assertion;
 
         public static class Assertion {
-            @NotNull(message = "'assertion:' requires 'device-public-key'")
-            public String devicePublicKey;
+            @NotNull(message = "'assertion:' requires 'proxy-public-key'")
+            public String proxyPublicKey;
         }
     }
     public static class OAuth {
@@ -277,7 +277,7 @@ public class UaaConfiguration {
             addPropertyAlias("signing-key", Jwt.Token.class, "signingKey");
             addPropertyAlias("verification-key", Jwt.Token.class, "verificationKey");
             addPropertyAlias("exclude", Jwt.Token.Claims.class, "exclusions");
-            addPropertyAlias("device-public-key", Device.Assertion.class, "devicePublicKey");
+            addPropertyAlias("proxy-public-key", Device.Assertion.class, "proxyPublicKey");
             addPropertyAlias("authorized-grant-types", OAuthClient.class, "grantTypes");
             addPropertyAlias("redirect-uri", OAuthClient.class, "redirectUri");
             addPropertyAlias("access-token-validity", OAuthClient.class, "accessTokenValidity");
