@@ -58,9 +58,12 @@ public class JwtBearerAssertionAuthenticationFilter extends OncePerRequestFilter
     protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response,
             final FilterChain filterChain) throws ServletException, IOException {
         String grantType = request.getParameter(OAuth2Utils.GRANT_TYPE);
-
-        try {
-            if (grantType.equals(OauthGrant.JWT_BEARER)) {
+        
+        try {        	
+        	if(grantType == null){
+        		throw new MissingGrantTypeException("Missing grant type.");
+        	}
+        	else if (grantType.equals(OauthGrant.JWT_BEARER)) {
                 String assertion = request.getParameter("assertion");
                 Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -102,5 +105,17 @@ public class JwtBearerAssertionAuthenticationFilter extends OncePerRequestFilter
         } else {
             return tokenAuthenticator.authenticateWithoutClientAssertionHeader(jwtAssertion);
         }
+    }
+}
+
+@SuppressWarnings("serial")
+class MissingGrantTypeException extends AuthenticationException {
+
+    public MissingGrantTypeException(String msg) {
+        super(msg);
+    }
+
+    public MissingGrantTypeException(String msg, Throwable t) {
+        super(msg, t);
     }
 }

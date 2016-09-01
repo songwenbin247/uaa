@@ -149,6 +149,30 @@ public class JwtBearerGrantIT {
             IntegrationTestUtils.deleteClient(this.adminClient, this.baseUrl, DEVICE_CLIENT_ID);
         }
     }
+    
+
+
+    @Test
+    public void testJwtBearerGrantMissingGrantType() throws Exception {
+        createUaaClientForDevice();
+
+        // create bearer token
+        String token = new MockAssertionToken().mockAssertionToken(DEVICE_CLIENT_ID, DEVICE_ID,
+                System.currentTimeMillis(), 600, TENANT_ID, AUDIENCE);
+        // call uaa/oauth/token
+        LinkedMultiValueMap<String, String> formData = new LinkedMultiValueMap<String, String>();
+        formData.add(ASSERTION, token);
+
+        HttpEntity<LinkedMultiValueMap<String, String>> requestEntity = new HttpEntity<>(formData, getHttpHeaders());
+        try {
+            this.tokenRestTemplate.postForEntity(this.baseUrl + "/oauth/token", requestEntity, String.class);
+            Assert.fail("jwt bearer grant flow with missing grant type did not fail.");
+        } catch (HttpClientErrorException e) {
+            Assert.assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
+        } finally {
+            IntegrationTestUtils.deleteClient(this.adminClient, this.baseUrl, DEVICE_CLIENT_ID);
+        }
+    }
 
     @Test
     public void testJwtBearerGrantNoAssertionTokenWithBasicAuth() throws Exception {
@@ -349,6 +373,7 @@ public class JwtBearerGrantIT {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void assertAccessToken(final OAuth2AccessToken accessToken) {
         Jwt decodedToken = JwtHelper.decode(accessToken.getValue());
         Map<String, Object> claims = JsonUtils.readValue(decodedToken.getClaims(),
