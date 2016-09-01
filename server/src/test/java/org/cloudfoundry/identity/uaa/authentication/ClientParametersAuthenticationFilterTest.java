@@ -11,6 +11,8 @@ package org.cloudfoundry.identity.uaa.authentication; /*************************
  * subcomponent's license, as noted in the LICENSE file.
  *******************************************************************************/
 
+import org.cloudfoundry.identity.uaa.authentication.manager.CommonLoginPolicy;
+import org.cloudfoundry.identity.uaa.authentication.manager.LoginPolicy.Result;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.http.MediaType;
@@ -42,6 +44,10 @@ public class ClientParametersAuthenticationFilterTest {
 
         AuthenticationManager clientAuthenticationManager = mock(AuthenticationManager.class);
         filter.setClientAuthenticationManager(clientAuthenticationManager);
+        
+        CommonLoginPolicy clientLoginPolicy = mock(CommonLoginPolicy.class);
+        filter.setLoginPolicy(clientLoginPolicy);
+        when(clientLoginPolicy.isAllowed(Mockito.anyString())).thenReturn(new Result(true, 0));
 
         BadCredentialsException badCredentialsException = new BadCredentialsException("bad credentials");
         when(clientAuthenticationManager.authenticate(Mockito.any())).thenThrow(badCredentialsException);

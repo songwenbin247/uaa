@@ -17,7 +17,7 @@ public class OauthGrant {
     public static final String REFRESH_TOKEN = "refresh_token";
     public static final String JWT_BEARER = "urn:ietf:params:oauth:grant-type:jwt-bearer";
     
-    public static final Set<String> SUPPORTED_GRANTS =  
+    public static final Set<String> SUPPORTED_GRANTS =
             Collections.unmodifiableSet(
                         new HashSet<>(Arrays.asList(
                                             CLIENT_CREDENTIALS,

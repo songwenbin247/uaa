@@ -6,7 +6,7 @@ buildscript {
 
   repositories {
     mavenCentral()
-    jcenter()
+    //jcenter()
     maven {
       url 'http://repo.spring.io/plugins-release'
     }
@@ -52,6 +52,9 @@ apply from: file('shared_versions.gradle')
 def uaaVersion = version
 def geArtifactoryReader = System.getenv('ARTIFACTORY_READER')
 def geArtifactoryReaderPassword  = System.getenv('ARTIFACTORY_READER_PW')
+def proxyHost  = System.getenv('PROXY_HOST')
+def proxyPort  = System.getenv('PROXY_PORT')
+def nonProxyHosts = 'localhost|*.localhost'
 
 allprojects {
   apply plugin: 'maven'
@@ -278,6 +281,11 @@ cargo {
     }
     systemProperties {
       property 'spring.profiles.active', System.getProperty('spring.profiles.active', 'default')
+      property 'http.proxyHost', proxyHost
+      property 'http.proxyPort', proxyPort
+      property 'https.proxyHost', proxyHost
+      property 'https.proxyPort', proxyPort
+      property 'http.nonProxyHosts', nonProxyHosts
     }
 
     installer {
