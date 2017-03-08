@@ -158,6 +158,11 @@ subprojects {
     jvmArgs += [ "-Xmx1024m" ]
   }
 
+  tasks.withType(Test) {
+    systemProperties = System.properties
+    systemProperties['user.dir'] = workingDir
+  }
+
   task integrationTest(type: Test) {
     dependsOn rootProject.cargoStartLocal
   }
