@@ -231,7 +231,7 @@ public class BootstrapTests {
         assertEquals(0,passwordPolicy.getRequireLowerCaseCharacter());
         assertEquals(0,passwordPolicy.getRequireDigit());
         assertEquals(0,passwordPolicy.getRequireSpecialCharacter());
-        assertEquals(0, passwordPolicy.getExpireInMonths());
+        assertEquals(0, passwordPolicy.getExpirePasswordInMonths());
 
         passwordPolicy = context.getBean("globalPasswordPolicy",PasswordPolicy.class);
         assertEquals(0, passwordPolicy.getMinLength());
@@ -240,7 +240,7 @@ public class BootstrapTests {
         assertEquals(0,passwordPolicy.getRequireLowerCaseCharacter());
         assertEquals(0,passwordPolicy.getRequireDigit());
         assertEquals(0,passwordPolicy.getRequireSpecialCharacter());
-        assertEquals(0, passwordPolicy.getExpireInMonths());
+        assertEquals(0, passwordPolicy.getExpirePasswordInMonths());
 
         PeriodLockoutPolicy globalPeriodLockoutPolicy = context.getBean("globalPeriodLockoutPolicy", PeriodLockoutPolicy.class);
         LockoutPolicy globalLockoutPolicy = globalPeriodLockoutPolicy.getDefaultLockoutPolicy();
@@ -437,7 +437,7 @@ public class BootstrapTests {
         assertEquals(0,passwordPolicy.getRequireLowerCaseCharacter());
         assertEquals(0,passwordPolicy.getRequireDigit());
         assertEquals(1,passwordPolicy.getRequireSpecialCharacter());
-        assertEquals(6, passwordPolicy.getExpireInMonths());
+        assertEquals(6, passwordPolicy.getExpirePasswordInMonths());
 
         context.getBean("globalPasswordPolicy", PasswordPolicy.class);
         assertEquals(8, passwordPolicy.getMinLength());
@@ -446,7 +446,7 @@ public class BootstrapTests {
         assertEquals(0,passwordPolicy.getRequireLowerCaseCharacter());
         assertEquals(0,passwordPolicy.getRequireDigit());
         assertEquals(1,passwordPolicy.getRequireSpecialCharacter());
-        assertEquals(6, passwordPolicy.getExpireInMonths());
+        assertEquals(6, passwordPolicy.getExpirePasswordInMonths());
 
         PeriodLockoutPolicy globalPeriodLockoutPolicy = context.getBean("globalPeriodLockoutPolicy", PeriodLockoutPolicy.class);
         LockoutPolicy globalLockoutPolicy = globalPeriodLockoutPolicy.getDefaultLockoutPolicy();
