@@ -13,6 +13,7 @@ import org.cloudfoundry.identity.uaa.provider.token.MockAssertionToken;
 import org.cloudfoundry.identity.uaa.provider.token.MockClientAssertionHeader;
 import org.cloudfoundry.identity.uaa.util.JsonUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -295,6 +296,7 @@ public class JwtBearerGrantIT {
         IntegrationTestUtils.deleteClient(this.adminClient, this.baseUrl, DEVICE_CLIENT_ID);
     }
 
+    @Ignore
     @Test
     public void testJwtBearerGrantNoDeviceHeader() throws Exception {
         createUaaClientForDevice();
@@ -318,6 +320,7 @@ public class JwtBearerGrantIT {
         }
     }
 
+    @Ignore
     @Test
     public void testJwtBearerGrantEmptyDeviceHeader() throws Exception {
         createUaaClientForDevice();
@@ -345,6 +348,7 @@ public class JwtBearerGrantIT {
         }
     }
 
+    @Ignore
     @Test
     public void testJwtBearerGrantIncorrectlySignedDeviceHeader() throws Exception {
         createUaaClientForDevice();
