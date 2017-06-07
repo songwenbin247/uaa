@@ -39,6 +39,7 @@ dependencies {
   runtime group: 'org.aspectj', name: 'aspectjweaver', version:parent.aspectJVersion
   runtime group: 'org.apache.tomcat', name: 'tomcat-jdbc', version:parent.tomcatJdbcPoolVersion
   runtime group: 'postgresql', name: 'postgresql', version:parent.postgresqlVersion
+  
   providedCompile group: 'javax.servlet', name: 'javax.servlet-api', version: parent.servletVersion
   runtime group: 'com.ge.predix', name: 'spring-log-filter', version:'1.1.0'
 
@@ -95,6 +96,7 @@ test {
   exclude '**/*AT.class'
   systemProperty 'java.io.tmpdir', '/tmp'
   systemProperty "mock.suite.test", "true"
+  systemProperty "java.io.tmpdir", "/tmp"
 }
 task docsTestRestDocs(type: Test) {
   include '**/DefaultDocsTestSuite.class'

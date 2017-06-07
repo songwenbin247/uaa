@@ -2,6 +2,7 @@ description = 'CloudFoundry Identity Server JAR'
 
 Project identityModel = parent.subprojects.find { it.name.equals('cloudfoundry-identity-model') }
 
+
 dependencies {
 
   compile(identityModel)
@@ -12,8 +13,8 @@ dependencies {
   compile group: 'com.ge.predix', name: 'spring-log-filter', version:'1.1.0'
   
   provided group: 'javax.servlet', name: 'javax.servlet-api', version: parent.servletVersion
+  compile group: 'com.ge.predix', name: 'jwt-bearer-key-provider', version:parent.predixpublickeyProviderVersion
   compile group: 'javax.mail', name: 'mail', version: parent.javamailVersion
-
   compile group: 'commons-logging', name: 'commons-logging', version: parent.commonsLoggingVersion
 
   compile group: 'com.jayway.jsonpath', name: 'json-path', version: parent.jsonPathVersion
