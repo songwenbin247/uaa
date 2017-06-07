@@ -128,6 +128,7 @@ public class SamlIdentityProviderConfiguratorTests {
         configurator.validateSamlIdentityProviderDefinition(singleAdd);
     }
 
+    @Ignore
     @Test
     public void testGetEntityID() throws Exception {
         Timer t = new Timer();
